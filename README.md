@@ -1,9 +1,9 @@
 # canopydash
 
-Create the virtual environment in that directory (make sure it is called venv otherwise it will be tracked by github)
-
 ## Installing dependencies
 
+
+Create the virtual environment in that directory (make sure it is called venv otherwise it will be tracked by github)
 ```
 python3 -m venv venv
 ```
