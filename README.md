@@ -1,28 +1,38 @@
 # canopydash
 
+## Running the django project locally
+
+Use the following command to run the project locally
+
+```
+python manage.py runserver
+```
+
 ## Installing dependencies
 
-
 Create the virtual environment in that directory (make sure it is called venv otherwise it will be tracked by github)
+
 ```
 python3 -m venv venv
 ```
 
 Activate the virtual environment
+
 ```
 source venv/bin/activate
 ```
 
 Install the necessary dependencies
+
 ```
 pip install -r requirements.txt
 ```
 
 To deactivate the virtual environment use
+
 ```
 deactivate
 ```
-
 
 ## Project Structure
 
@@ -31,7 +41,7 @@ canopydash/
 ├── manage.py
 ├── requirements.txt
 ├── docker-compose.yml
-├── .env                            
+├── .env
 
 ├── docker/                         # infra config
 │   ├── django/                     # Django app container
@@ -55,7 +65,7 @@ canopydash/
 │   ├── api.py                      # API endpoints (clip, frame)
 │   ├── tasks.py                    # Celery tasks (FFmpeg background jobs)
 │   ├── urls.py                     # Routes for views + API
-│   ├── models.py                   
+│   ├── models.py
 │   ├── utils.py                    # Shared functions: file locators, ffmpeg helpers
 │   ├── templates/
 │   │   └── camera/
