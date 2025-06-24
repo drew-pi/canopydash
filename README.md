@@ -26,6 +26,7 @@ deactivate
 
 ## Project Structure
 
+```text
 canopydash/
 ├── manage.py
 ├── requirements.txt
@@ -78,3 +79,4 @@ canopydash/
 │       └── metrics/
 │           └── js/
 │               └── dashboard.js    # Chart.js, AJAX updates
+```
