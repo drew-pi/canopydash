@@ -1,15 +1,19 @@
 from django.http import HttpResponseBadRequest
+from django.conf import settings
+import redis
 
 import os
 import subprocess
 import logging
+import json
 
+r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
 logger = logging.getLogger(__name__)
 
 
 
-def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clips, output_clipped_path):
+def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, raw_clips, output_clipped_path):
     """
     Generates a video clip of specified duration from a sequence of raw video segments.
 
@@ -39,16 +43,18 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
 
     clip_full_file_names = [os.path.join(RECORDINGS_PATH, f"{_clip}-{camera}.mp4") for _clip in raw_clips]
 
-    logger.info(f"Clips that are needed: {clip_full_file_names}")
+    logger.debug(f"Clips that are needed: {clip_full_file_names}")
 
     valid_clip_full_file_names = [f"file '{p}'" for p in clip_full_file_names if os.path.isfile(p)]
 
-    logger.info(f"Missing {len(clip_full_file_names) - len(valid_clip_full_file_names)} clips")
+    logger.debug(f"Missing {len(clip_full_file_names) - len(valid_clip_full_file_names)} clips")
 
     valid_clip_files = "\n".join(valid_clip_full_file_names)
 
     with open(clip_files_path, "w") as f:
         f.write(valid_clip_files)
+
+    r.set(f"progress:{task.request.id}", json.dumps({"progress": 15, "step": "Starting process of concatenated video clips together"}))
 
     cmd = [
         "ffmpeg",
@@ -64,6 +70,8 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
 
     logger.info(f"Concatenated {len(valid_clip_full_file_names)} existing clips into {full_clip_path}")
 
+    r.set(f"progress:{task.request.id}", json.dumps({"progress": 50, "step": "Finished concatenating video clips, beginning trimming of full clip"}))
+
     cmd = [
         "ffmpeg",
         "-ss", start_offset,
@@ -75,6 +83,9 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
         output_clipped_path
     ]
 
+    r.set(f"progress:{task.request.id}", json.dumps({"progress": 95, "step": "Finished trimming full clip, cleaning up temporary files and zipping"}))
+
+
     subprocess.run(cmd, check=True)
 
     # remove intermediate steps (if they exist)
@@ -82,7 +93,7 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
     os.path.exists(full_clip_path) and os.remove(full_clip_path)
 
 
-def extract_frame(timestamp, output_path, camera, RECORDINGS_PATH, FILE_FMT):
+def extract_frame(task, timestamp, output_path, camera, RECORDINGS_PATH, FILE_FMT):
     """
     Extracts a single video frame from a recorded segment at the specified timestamp.
 
@@ -112,6 +123,8 @@ def extract_frame(timestamp, output_path, camera, RECORDINGS_PATH, FILE_FMT):
 
     if not os.path.isfile(path):
         return HttpResponseBadRequest(f"Video segment for timestamp {timestamp} and camera {camera} not found.")
+    
+    r.set(f"progress:{task.request.id}", json.dumps({"progress": 80, "step": "Getting frame from correct clip"}))
 
     cmd  = [
         "ffmpeg", 
@@ -125,4 +138,6 @@ def extract_frame(timestamp, output_path, camera, RECORDINGS_PATH, FILE_FMT):
     ]
     subprocess.run(cmd, check=True)
 
-    logger.info(f"Sucessfully captured frame {path} and loaded into {output_path}")
+    r.set(f"progress:{task.request.id}", json.dumps({"progress": 95, "step": "Captured frame, cleaning up temporary files and zipping"}))
+
+    logger.debug(f"Sucessfully captured frame {path} and loaded into {output_path}")
