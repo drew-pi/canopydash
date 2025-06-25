@@ -1,0 +1,12 @@
+FROM nginx:1.28
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libnginx-mod-rtmp && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+
+EXPOSE 8080 
+
+EXPOSE 1935
