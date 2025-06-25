@@ -5,7 +5,6 @@ services:
       context: .
       dockerfile: docker/django/Dockerfile.django
     volumes:
-      - .:/app
       - ./_data:/recordings
     env_file:
       - .env.local
