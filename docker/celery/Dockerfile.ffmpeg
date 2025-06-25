@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Working directory
 WORKDIR /app
 
+# use local time instead of UTC
+ENV TZ=America/New_York
+
 # Copy entrypoint and your scripts
 COPY docker/celery/scripts/ ./scripts/
 COPY docker/celery/ffmpeg.entry.sh ./ffmpeg.entry.sh
