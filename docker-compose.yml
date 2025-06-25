@@ -7,7 +7,7 @@ services:
     volumes:
       - ./${DATA_DIR}:/recordings
     env_file:
-      - .env.local
+      - .env
     ports:
       - "8000:8000"
     # depends_on:
@@ -20,9 +20,9 @@ services:
     # command: celery -A canopydash worker --loglevel=info
     volumes:
       - ./${DATA_DIR}:/recordings
-      - ./${LOGS_PATH}:/logs
+      - ./${LOG_DIR}:/logs
     env_file:
-      - .env.local
+      - .env
     devices:
       - "/dev/video0:/dev/video0"
       - "/dev/video1:/dev/video1"
