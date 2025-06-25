@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: docker/django/Dockerfile.django
     volumes:
-      - ./_data:/recordings
+      - ./${DATA_DIR}:/recordings
     env_file:
       - .env.local
     ports:
@@ -13,18 +13,21 @@ services:
     # depends_on:
     #   - redis
 
-  # celery:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/celery/Dockerfile
-  #   command: celery -A canopydash worker --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #     - recordings:/recordings
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - redis
+  celery:
+    build:
+      context: .
+      dockerfile: docker/celery/Dockerfile.ffmpeg
+    # command: celery -A canopydash worker --loglevel=info
+    volumes:
+      - ./${DATA_DIR}:/recordings
+      - ./${LOGS_PATH}:/logs
+    env_file:
+      - .env.local
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"
+    depends_on:
+      - nginx
 
   nginx:
     build:
@@ -35,7 +38,7 @@ services:
       - "1935:1935"
     volumes:
       - ./hls:/var/www/hls
-      - ./_data:/recordings
+      - ./${DATA_DIR}:/recordings
       - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - django

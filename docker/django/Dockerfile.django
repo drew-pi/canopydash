@@ -48,7 +48,7 @@ USER ${USER}
 EXPOSE 8000 
 
 # Make entry file executable
-RUN chmod +x docker/django/start.sh
+RUN chmod +x docker/django/django.entry.sh
 
 # Start the django application
-CMD ["docker/django/start.sh"]
+CMD ["docker/django/django.entry.sh"]
