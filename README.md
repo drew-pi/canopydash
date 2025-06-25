@@ -41,6 +41,8 @@ canopydash/
 ├── manage.py
 ├── requirements.txt
 ├── docker-compose.yml
+├── .dockerignore
+├── .gitignore
 ├── .env
 
 ├── docker/                         # infra config
@@ -68,11 +70,10 @@ canopydash/
 │   ├── models.py
 │   ├── utils.py                    # Shared functions: file locators, ffmpeg helpers
 │   ├── templates/
-│   │   └── camera/
-│   │       ├── live.html           # Live stream display
-│   │       └── video_list.html     # Browse/download video segments
+│   │   ├── live.html               # Live stream display
+│   │   └── video_list.html         # Browse/download video segments
 │   └── static/
-│       └── camera/
+│       └── live/
 │           └── js/
 │               └── player.js       # Handles stream switching / frontend logic
 
