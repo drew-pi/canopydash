@@ -41,14 +41,14 @@ COPY --chown=${USER}:${USER} . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1 
 
-# Make entry file executable
-RUN chmod +x docker/django/start.sh
-
 # Switch to non-root user
 USER ${USER}
 
 # Expose the application port
 EXPOSE 8000 
+
+# Make entry file executable
+RUN chmod +x docker/django/start.sh
 
 # Start the django application
 CMD ["docker/django/start.sh"]
