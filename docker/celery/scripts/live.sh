@@ -7,8 +7,6 @@
 set -euo pipefail
 trap 'echo "[ERROR] Command failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 
-source .env
-
 # check to see if only one argument passed in
 if [[ $# -ne 2 ]]; then
     echo "[ERROR] Invalid input, found $# parameters."

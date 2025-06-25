@@ -14,7 +14,6 @@ WORKDIR /app
 # Copy entrypoint and your scripts
 COPY docker/celery/scripts/ ./scripts/
 COPY docker/celery/ffmpeg.entry.sh ./ffmpeg.entry.sh
-COPY .env ./.env
 
 RUN chmod +x ffmpeg.entry.sh
 
