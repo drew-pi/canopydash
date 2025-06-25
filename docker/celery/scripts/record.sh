@@ -7,8 +7,6 @@
 set -euo pipefail
 trap 'echo "[ERROR] Command failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 
-source .env
-
 # check to see if only one argument passed in
 if [[ $# -ne 1 ]]; then
     echo "[ERROR] Invalid input, found $# parameters."
@@ -25,10 +23,10 @@ fi
 echo "[INFO] Recording camera $CAMERA_ID stream"
 echo "[INFO] Using segment length=$SEGMENT_LEN"
 echo "[INFO] Using jetson ip=$JETSON_IP"
-echo "[INFO] Using data directory=$DATA_DIR"
+echo "[INFO] Using data directory=$RECORDINGS_DIR"
 echo "[INFO] Using file format=$FILE_FMT-$CAMERA_ID.mp4"
 
-SAVE_DIR=$DATA_DIR
+SAVE_DIR=$RECORDINGS_DIR
 # making sure that the directory exists
 mkdir -p $SAVE_DIR
 
