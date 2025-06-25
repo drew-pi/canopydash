@@ -9,10 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # Working directory
-WORKDIR /scripts
+WORKDIR /app
 
 # Copy entrypoint and your scripts
-COPY scripts/ ./      
+COPY docker/celery/scripts/ ./scripts/
 COPY docker/celery/ffmpeg.entry.sh ./ffmpeg.entry.sh
 
 RUN chmod +x ffmpeg.entry.sh
