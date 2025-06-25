@@ -69,7 +69,7 @@ canopydash/
 │   │   └── nginx.conf
 │   └── redis/                      # Redis config (if customized)
 
-├── canopydash/                     # Django project settings
+├── canopy/                     # Django project settings
 │   ├── __init__.py
 │   ├── settings.py                 # Project-wide config
 │   ├── urls.py                     # Mounts app routes
