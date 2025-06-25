@@ -37,7 +37,7 @@ SEGMENT_LEN = env("SEGMENT_LEN", default=3600)
 FILE_FMT=env("FILE_FMT", default="%Y-%m-%dT%H")
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', JETSON_IP]
 
 # Application definition
 

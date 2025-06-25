@@ -39,10 +39,11 @@ pkill -x ffmpeg || true
 
 
 echo "Rebuilding $IMAGE_NAME"
-sudo docker build -t $IMAGE_NAME docker/django/Dockerfile.dev
+sudo docker build -t $IMAGE_NAME -f docker/django/Dockerfile.dev .
 
 # start in detached mode
 sudo docker run --rm -d --name $CONTAINER_NAME --network host \
+    --env-file .env.local \
     -v $(pwd)/hls:/var/www/hls \
     -v $(pwd)/_data:/recordings \
     $IMAGE_NAME
