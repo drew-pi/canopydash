@@ -5,7 +5,7 @@
   </head>
   <body>
     <h1>Download a Video Clip</h1>
-    <form action="/clip" method="get">
+    <form action="{% url 'clip' %}" method="get">
       <label>
         Choose which camera:
         <select name="camera">
@@ -29,7 +29,7 @@
     </form>
 
     <h1>Get a frame</h1>
-    <form action="/frame" method="get">
+    <form action="{% url 'frame' %}" method="get">
       <label>
         Choose which camera:
         <select name="camera">
