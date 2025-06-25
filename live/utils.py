@@ -2,7 +2,10 @@ from django.http import HttpResponseBadRequest
 
 import os
 import subprocess
+import logging
 
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -36,11 +39,11 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
 
     clip_full_file_names = [os.path.join(RECORDINGS_PATH, f"{_clip}-{camera}.mp4") for _clip in raw_clips]
 
-    # logging.info(f"Clips that are needed: {clip_full_file_names}")
+    logger.info(f"Clips that are needed: {clip_full_file_names}")
 
     valid_clip_full_file_names = [f"file '{p}'" for p in clip_full_file_names if os.path.isfile(p)]
 
-    # logging.info(f"Missing {len(clip_full_file_names) - len(valid_clip_full_file_names)} clips")
+    logger.info(f"Missing {len(clip_full_file_names) - len(valid_clip_full_file_names)} clips")
 
     valid_clip_files = "\n".join(valid_clip_full_file_names)
 
@@ -59,7 +62,7 @@ def create_clip(start, start_offset, duration, camera, RECORDINGS_PATH, raw_clip
 
     subprocess.run(cmd, check=True)
 
-    # logging.info(f"Concatenated {len(valid_clip_full_file_names)} existing clips into {full_clip_path}")
+    logger.info(f"Concatenated {len(valid_clip_full_file_names)} existing clips into {full_clip_path}")
 
     cmd = [
         "ffmpeg",
@@ -122,4 +125,4 @@ def extract_frame(timestamp, output_path, camera, RECORDINGS_PATH, FILE_FMT):
     ]
     subprocess.run(cmd, check=True)
 
-    # logging.info(f"Sucessfully captured frame {path} and loaded into {output_path}")
+    logger.info(f"Sucessfully captured frame {path} and loaded into {output_path}")

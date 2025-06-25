@@ -20,7 +20,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Environment variables
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    SEGMENT_LEN=(int, 3600),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env.local'))
 
@@ -33,6 +34,7 @@ DEBUG = env("DEBUG")
 JETSON_IP = env("JETSON_IP")
 RECORDINGS_PATH = env("RECORDINGS_PATH", default="/recordings")
 SEGMENT_LEN = env("SEGMENT_LEN", default=3600)
+FILE_FMT=env("FILE_FMT", default="%Y-%m-%dT%H")
 
 
 ALLOWED_HOSTS = []
@@ -77,6 +79,64 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'canopy.wsgi.application'
+
+# Logging
+# https://docs.djangoproject.com/en/5.2/topics/logging/
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,  # Keeps Django’s internal logging working
+    "filters": {
+        "require_debug_false": {
+            "()": "django.utils.log.RequireDebugFalse",
+        },
+        "require_debug_true": {
+            "()": "django.utils.log.RequireDebugTrue",
+        },
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s [%(name)s] %(message)s'
+        },
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
+        }
+    },
+    'handlers': {
+        "django.server": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        "django.server": {
+            "handlers": ["django.server"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        'live': {  # your app-specific logger
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 
 # Database

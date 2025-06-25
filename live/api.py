@@ -5,8 +5,11 @@ import numpy as np
 from datetime import datetime
 import zipfile
 import os
+import logging
 
 from .utils import create_clip, extract_frame
+
+logger = logging.getLogger(__name__)
 
 
 def clip(request):
@@ -18,8 +21,8 @@ def clip(request):
     end_ts = request.GET.get("end")      # e.g., 2025-06-20T13:01:30
     camera = request.GET.get("camera") # A, B or BOTH (assumes that if it is not A or B then want both)
 
-    # logging.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
-
+    logger.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
+    
     # convert to datetime objects
     start = datetime.fromisoformat(start_ts)
     end = datetime.fromisoformat(end_ts)
@@ -31,7 +34,7 @@ def clip(request):
     start = start.replace(second=0, microsecond=0)
     # start.replace(minute=0, second=0, microsecond=0)
 
-    # logging.info(f"Start time aligned to boundry is {start}")
+    logger.info(f"Start time aligned to boundry is {start}")
 
     # make sure the end is after start
     if start > end:
@@ -79,10 +82,8 @@ def frame(request):
     ts = datetime.fromisoformat(request.GET.get("ts"))   
     camera  = request.args.get("camera")  # default to camera A
     
-    RECORDINGS_PATH=os.getenv("RECORDINGS_PATH", "/recordings")
-
-    FILE_FMT='%Y-%m-%dT%H:%M:00.000000'
-    # FILE_FMT=settings.FILE_FMT
+    RECORDINGS_PATH=settings.RECORDINGS_PATH
+    FILE_FMT=settings.FILE_FMT
 
     output_frame_path_A = f"/tmp/{ts.isoformat().replace(':', '-')}-frameA.jpg"
     output_frame_path_B = f"/tmp/{ts.isoformat().replace(':', '-')}-frameB.jpg"
