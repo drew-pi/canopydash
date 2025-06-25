@@ -7,7 +7,7 @@ trap 'echo "[ERROR] Command failed at line $LINENO: $BASH_COMMAND" >&2' ERR
 echo "Shutting down all app processes in 5 seconds"
 sleep 5
 
-CONTAINER_NAME=live
+source .env.local
 
 # check to see if already existing version
 if [ "$(sudo docker ps -aq -f name=$CONTAINER_NAME)" ]; then
