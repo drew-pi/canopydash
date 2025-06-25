@@ -15,11 +15,11 @@ echo "[INFO] Starting FFmpeg live jobs"
 
 setsid bash scripts/live.sh /dev/video0 A > "$LOGGING_DIR/live_cameraA.log" 2>&1 &
 live_pid_A=$!
-echo "Started background live process A with pid $live_pid_A"
+echo "[INFO] Started background live process A with pid $live_pid_A"
 
 setsid bash scripts/live.sh /dev/video1 B > "$LOGGING_DIR/live_cameraB.log" 2>&1 &
 live_pid_B=$!
-echo "Started background live process B with pid $live_pid_B"
+echo "[INFO] Started background live process B with pid $live_pid_B"
 
 sleep 1
 
