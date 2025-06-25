@@ -29,6 +29,7 @@ rec_pid_B=$!
 echo "[INFO] Started background recording process B with pid $rec_pid_B"
 
 # Keep the container alive
-wait $live_pid_A $live_pid_B $rec_pid_A $rec_pid_B
+# wait $live_pid_A $live_pid_B $rec_pid_A $rec_pid_B
+tail -f /logs/*.log
 
 

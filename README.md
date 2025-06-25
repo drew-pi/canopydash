@@ -1,5 +1,19 @@
 # canopydash
 
+## Running the django project using docker compose
+
+To spin the project up use (can also add the `-d` flag to detach it from current terminal)
+
+```
+sudo docker-compose up
+```
+
+To stop the django project use
+
+```
+sudo docker-compose down --remove-orphans --volumes
+```
+
 ## Running the django project locally
 
 Use the following command to run the project locally
@@ -47,7 +61,7 @@ canopydash/
 
 ├── docker/                         # infra config
 │   ├── django/
-│   │   ├── start.sh                # serve the django service (using gunicorn)                    
+│   │   ├── start.sh                # serve the django service (using gunicorn)
 │   │   └── Dockerfile              # Django project container
 │   ├── celery/                     # Celery worker
 │   │   └── Dockerfile
