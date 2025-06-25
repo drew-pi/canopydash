@@ -1,3 +1,8 @@
+# custom folders to ignore (mostly because too much data)
+_log/
+_data/
+hls/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

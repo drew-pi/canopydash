@@ -37,6 +37,9 @@ fi
 # ps aux | grep [f]fmpeg
 pkill -x ffmpeg || true
 
+# before docker initializes with root
+mkdir -p $LOG_DIR
+mkdir -p $DATA_DIR
 
 echo "Rebuilding $IMAGE_NAME"
 sudo docker build -t $IMAGE_NAME -f docker/django/Dockerfile.dev .
@@ -54,9 +57,6 @@ sleep 3
 sudo docker logs -n 30 -t $CONTAINER_NAME
 
 sleep 1
-
-mkdir -p $LOG_DIR
-mkdir -p $DATA_DIR
 
 echo "Starting camera feed and recording"
 
