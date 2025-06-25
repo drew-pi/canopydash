@@ -46,8 +46,9 @@ canopydash/
 ├── .env
 
 ├── docker/                         # infra config
-│   ├── django/                     # Django app container
-│   │   └── Dockerfile
+│   ├── django/
+│   │   ├── start.sh                # serve the django service (using gunicorn)                    
+│   │   └── Dockerfile              # Django project container
 │   ├── celery/                     # Celery worker
 │   │   └── Dockerfile
 │   ├── nginx/                      # Serves HLS/static
