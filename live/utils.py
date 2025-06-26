@@ -12,7 +12,6 @@ r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 logger = logging.getLogger(__name__)
 
 
-
 def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, raw_clips, output_clipped_path):
     """
     Generates a video clip of specified duration from a sequence of raw video segments.
