@@ -196,6 +196,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html#using-celery-with-django
 
 # redis database url
-CELERY_BROKER_URL = f"redis://redis:{os.getenv("REDIS_PORT", "6379")}/0"
+CELERY_BROKER_URL = f'redis://redis:{os.getenv("REDIS_PORT", "6379")}/0'
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TIMEZONE = "America/New_York"

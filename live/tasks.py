@@ -12,6 +12,23 @@ import os
 from .utils import create_clip, extract_frame
 
 
+
+
+
+
+import time
+
+
+@shared_task
+def write_message_file(message):
+    time.sleep(3)  # Simulate a long-running task
+
+    path = f"/tmp/message-{int(time.time())}.txt"
+    with open(path, "w") as f:
+        f.write(message)
+
+    return path
+
 # r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
 # logger = logging.getLogger(__name__)

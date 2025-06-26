@@ -1,16 +1,42 @@
-# from django.http import JsonResponse, FileResponse, AsyncResult
-# from django.conf import settings
-# import redis
+from django.http import JsonResponse, FileResponse
+from django.conf import settings
+from celery.result import AsyncResult
+import redis
 
 import logging
-# import json
-# import os
+import json
+import os
 
 # from .tasks import generate_clip_task, extract_frame_task
 
 # r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
 logger = logging.getLogger(__name__)
+
+
+
+
+
+from .tasks import write_message_file
+
+from django.http import JsonResponse, FileResponse, Http404
+from .tasks import write_message_file
+
+
+def trigger_write(request):
+    message = request.GET.get("msg", "Hello world!")
+    task = write_message_file.delay(message)
+    return JsonResponse({"task_id": task.id})
+
+
+def get_result_file(request, task_id):
+    result = AsyncResult(task_id)
+    if result.ready():
+        path = result.result
+        if os.path.exists(path):
+            return FileResponse(open(path, 'rb'), as_attachment=True)
+        raise Http404("File not found")
+    return JsonResponse({"status": "pending"})
 
 # def clip(request):
 #     start_ts = request.GET.get("start")
@@ -59,112 +85,112 @@ logger = logging.getLogger(__name__)
 #     return JsonResponse({"status": task.state})
 
 
-from django.http import HttpResponseBadRequest, FileResponse
-from django.conf import settings
-from celery import shared_task
-import redis
-import numpy as np
+# from django.http import HttpResponseBadRequest, FileResponse
+# from django.conf import settings
+# from celery import shared_task
+# import redis
+# import numpy as np
 
-from datetime import datetime
-import zipfile
-import json
-import os
+# from datetime import datetime
+# import zipfile
+# import json
+# import os
 
-from .utils import create_clip, extract_frame
+# from .utils import create_clip, extract_frame
 
 
-def clip(request):
-    """
-    API route that returns a video recording from a specified start to end point
-    """
+# def clip(request):
+#     """
+#     API route that returns a video recording from a specified start to end point
+#     """
 
-    start_ts = request.GET.get("start")  # e.g., 2025-06-20T13:00:00
-    end_ts = request.GET.get("end")      # e.g., 2025-06-20T13:01:30
-    camera = request.GET.get("camera") # A, B or BOTH (assumes that if it is not A or B then want both)
+#     start_ts = request.GET.get("start")  # e.g., 2025-06-20T13:00:00
+#     end_ts = request.GET.get("end")      # e.g., 2025-06-20T13:01:30
+#     camera = request.GET.get("camera") # A, B or BOTH (assumes that if it is not A or B then want both)
 
-    logger.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
+#     logger.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
     
-    # convert to datetime objects
-    start = datetime.fromisoformat(start_ts)
-    end = datetime.fromisoformat(end_ts)
+#     # convert to datetime objects
+#     start = datetime.fromisoformat(start_ts)
+#     end = datetime.fromisoformat(end_ts)
 
-    # used later for how long to record the concatenated video file
-    duration = (end - start).total_seconds()
-    start_offset = f"{start.strftime('00:00:%S')}"
+#     # used later for how long to record the concatenated video file
+#     duration = (end - start).total_seconds()
+#     start_offset = f"{start.strftime('00:00:%S')}"
 
-    start = start.replace(second=0, microsecond=0)
-    # start.replace(minute=0, second=0, microsecond=0)
+#     start = start.replace(second=0, microsecond=0)
+#     # start.replace(minute=0, second=0, microsecond=0)
 
-    logger.info(f"Start time aligned to boundry is {start}")
+#     logger.info(f"Start time aligned to boundry is {start}")
 
-    # make sure the end is after start
-    if start > end:
-        return HttpResponseBadRequest("ERROR IN /clip API ENPOINT: Start time must be before end time.")
+#     # make sure the end is after start
+#     if start > end:
+#         return HttpResponseBadRequest("ERROR IN /clip API ENPOINT: Start time must be before end time.")
     
-    RECORDINGS_PATH=settings.RECORDINGS_PATH
-    SEGMENT_LEN=settings.SEGMENT_LEN
+#     RECORDINGS_PATH=settings.RECORDINGS_PATH
+#     SEGMENT_LEN=settings.SEGMENT_LEN
 
-    raw_clips = np.arange(start, end, np.timedelta64(SEGMENT_LEN, "s"))
+#     raw_clips = np.arange(start, end, np.timedelta64(SEGMENT_LEN, "s"))
 
-    # paths
-    zip_path = f"/tmp/clip-AB-{start.isoformat().replace(':', '-')}.zip"
-    output_clipped_path_A = f"/tmp/{start.isoformat().replace(':', '-')}-cameraA.mp4"
-    output_clipped_path_B = f"/tmp/{start.isoformat().replace(':', '-')}-cameraB.mp4"
+#     # paths
+#     zip_path = f"/tmp/clip-AB-{start.isoformat().replace(':', '-')}.zip"
+#     output_clipped_path_A = f"/tmp/{start.isoformat().replace(':', '-')}-cameraA.mp4"
+#     output_clipped_path_B = f"/tmp/{start.isoformat().replace(':', '-')}-cameraB.mp4"
 
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        if camera == "A":
-            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_clipped_path_A)
-            zipf.write(output_clipped_path_A, arcname="cameraA.mp4")
-        elif camera == "B":
-            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_clipped_path_B)
-            zipf.write(output_clipped_path_B, arcname="cameraB.mp4")
-        else: # both
-            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_clipped_path_A)
-            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_clipped_path_B)
+#     with zipfile.ZipFile(zip_path, 'w') as zipf:
+#         if camera == "A":
+#             create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_clipped_path_A)
+#             zipf.write(output_clipped_path_A, arcname="cameraA.mp4")
+#         elif camera == "B":
+#             create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_clipped_path_B)
+#             zipf.write(output_clipped_path_B, arcname="cameraB.mp4")
+#         else: # both
+#             create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_clipped_path_A)
+#             create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_clipped_path_B)
 
-            zipf.write(output_clipped_path_A, arcname="cameraA.mp4")
-            zipf.write(output_clipped_path_B, arcname="cameraB.mp4")
+#             zipf.write(output_clipped_path_A, arcname="cameraA.mp4")
+#             zipf.write(output_clipped_path_B, arcname="cameraB.mp4")
 
-        # remove intermediate files after zipping (if they exist)
-        os.path.exists(output_clipped_path_A) and os.remove(output_clipped_path_A)
-        os.path.exists(output_clipped_path_B) and os.remove(output_clipped_path_B)
+#         # remove intermediate files after zipping (if they exist)
+#         os.path.exists(output_clipped_path_A) and os.remove(output_clipped_path_A)
+#         os.path.exists(output_clipped_path_B) and os.remove(output_clipped_path_B)
 
-    return FileResponse(open(zip_path, "rb"), as_attachment=True, filename=os.path.basename(zip_path), content_type="application/zip")
-
-
+#     return FileResponse(open(zip_path, "rb"), as_attachment=True, filename=os.path.basename(zip_path), content_type="application/zip")
 
 
-def frame(request):
-    """
-    API route that returns specified frame
-    """
 
-    ts = datetime.fromisoformat(request.GET.get("ts"))   
-    camera  = request.args.get("camera")  # default to camera A
+
+# def frame(request):
+#     """
+#     API route that returns specified frame
+#     """
+
+#     ts = datetime.fromisoformat(request.GET.get("ts"))   
+#     camera  = request.args.get("camera")  # default to camera A
     
-    RECORDINGS_PATH=settings.RECORDINGS_PATH
-    FILE_FMT=settings.FILE_FMT
+#     RECORDINGS_PATH=settings.RECORDINGS_PATH
+#     FILE_FMT=settings.FILE_FMT
 
-    output_frame_path_A = f"/tmp/{ts.isoformat().replace(':', '-')}-frameA.jpg"
-    output_frame_path_B = f"/tmp/{ts.isoformat().replace(':', '-')}-frameB.jpg"
-    zip_path = f"/tmp/frame-AB-{ts.isoformat().replace(':', '-')}.zip"
+#     output_frame_path_A = f"/tmp/{ts.isoformat().replace(':', '-')}-frameA.jpg"
+#     output_frame_path_B = f"/tmp/{ts.isoformat().replace(':', '-')}-frameB.jpg"
+#     zip_path = f"/tmp/frame-AB-{ts.isoformat().replace(':', '-')}.zip"
 
-    with zipfile.ZipFile(zip_path, 'w') as zipf:
-        if camera == "A":
-            extract_frame(ts, output_frame_path_A, "A", RECORDINGS_PATH, FILE_FMT)
-            zipf.write(output_frame_path_A, arcname="cameraA.jpg")
-        elif camera == "B":
-            extract_frame(ts, output_frame_path_B, "B", RECORDINGS_PATH, FILE_FMT)
-            zipf.write(output_frame_path_B, arcname="cameraB.jpg")
-        else: # both
-            extract_frame(ts, output_frame_path_A, "A", RECORDINGS_PATH, FILE_FMT)
-            extract_frame(ts, output_frame_path_B, "B", RECORDINGS_PATH, FILE_FMT)
+#     with zipfile.ZipFile(zip_path, 'w') as zipf:
+#         if camera == "A":
+#             extract_frame(ts, output_frame_path_A, "A", RECORDINGS_PATH, FILE_FMT)
+#             zipf.write(output_frame_path_A, arcname="cameraA.jpg")
+#         elif camera == "B":
+#             extract_frame(ts, output_frame_path_B, "B", RECORDINGS_PATH, FILE_FMT)
+#             zipf.write(output_frame_path_B, arcname="cameraB.jpg")
+#         else: # both
+#             extract_frame(ts, output_frame_path_A, "A", RECORDINGS_PATH, FILE_FMT)
+#             extract_frame(ts, output_frame_path_B, "B", RECORDINGS_PATH, FILE_FMT)
 
-            zipf.write(output_frame_path_A, arcname="cameraA.jpg")
-            zipf.write(output_frame_path_B, arcname="cameraB.jpg")
+#             zipf.write(output_frame_path_A, arcname="cameraA.jpg")
+#             zipf.write(output_frame_path_B, arcname="cameraB.jpg")
 
-         # remove intermediate files after zipping (if they exist)
-        os.path.exists(output_frame_path_A) and os.remove(output_frame_path_A)
-        os.path.exists(output_frame_path_B) and os.remove(output_frame_path_B)
+#          # remove intermediate files after zipping (if they exist)
+#         os.path.exists(output_frame_path_A) and os.remove(output_frame_path_A)
+#         os.path.exists(output_frame_path_B) and os.remove(output_frame_path_B)
 
-    return FileResponse(open(zip_path, "rb"), as_attachment=True, filename=os.path.basename(zip_path), content_type="application/zip")
+#     return FileResponse(open(zip_path, "rb"), as_attachment=True, filename=os.path.basename(zip_path), content_type="application/zip")

@@ -6,6 +6,7 @@ services:
       dockerfile: docker/django/Dockerfile.django
     volumes:
       - ./${DATA_DIR}:/recordings
+      - tmp-data:/tmp
     env_file:
       - .env
     ports:
@@ -26,7 +27,16 @@ services:
       - "/dev/video1:/dev/video1"
     depends_on:
       - nginx
-
+  celery:
+    build:
+      context: .
+      dockerfile: docker/celery/Dockerfile
+    volumes:
+      - tmp-data:/tmp
+    env_file:
+      - .env
+    depends_on:
+      - redis
   nginx:
     build:
       context: .
@@ -45,3 +55,5 @@ services:
     ports:
       - "6379:6379"
     restart: unless-stopped
+  volumes:
+    tmp-data:
