@@ -4,6 +4,8 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 import redis
 
+import datetime as datetime
+from zoneinfo import ZoneInfo
 import os
 import subprocess
 import logging
@@ -66,7 +68,7 @@ def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, ra
     clip_files_path = f"/tmp/concat_list_{camera}_{start.isoformat().replace(':', '-')}.txt"
     full_clip_path = f"/tmp/full_clip-{camera}-{start.isoformat().replace(':', '-')}.mp4"
 
-    clip_full_file_names = [os.path.join(RECORDINGS_PATH, f"{_clip.strftime(settings.FILE_FMT)}-{camera}.mp4") for _clip in raw_clips]
+    clip_full_file_names = [os.path.join(RECORDINGS_PATH, f"{_clip.astimezone(ZoneInfo(settings.TIME_ZONE)).strftime(settings.FILE_FMT)}-{camera}.mp4") for _clip in raw_clips]
 
     logger.debug(f"Clips that are needed: {clip_full_file_names}")
 
