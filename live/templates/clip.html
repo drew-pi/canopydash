@@ -25,7 +25,9 @@
         <input type="datetime-local" id="end" step="1" />
       </label>
 
-      <button id="submit-btn" type="submit" onclick="submitMessage()">Download Clip</button>
+      <button id="submit-btn" type="submit" onclick="submitMessage()">
+        Download Clip
+      </button>
     </div>
 
     <!-- <form id="clip-form">
@@ -77,6 +79,11 @@
           ws.onmessage = (e) => {
             const data = JSON.parse(e.data);
             console.log("Received update:", data);
+
+            if (data.status === "Failed") {
+              ws.close();
+              alert("Task failed: " + (data.error || "Unknown error"));
+            }
 
             document.getElementById("status").innerText = data.status;
             document.getElementById("progress").value = data.progress;
@@ -163,6 +170,6 @@
             btn.disabled = false;
           }
         }); -->
-    </script>
+    <!-- </script> -->
   </body>
 </html>
