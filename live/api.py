@@ -1,6 +1,9 @@
 from django.http import HttpResponse, JsonResponse, Http404
+from django.conf import settings
 from celery.result import AsyncResult
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import logging
 import json
@@ -18,7 +21,13 @@ def clip(request):
 
     logger.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
 
-    task = generate_clip_task.delay(start_ts, end_ts, camera)
+    start_utc = datetime.fromisoformat(start_ts)
+    end_dt = datetime.fromisoformat(end_ts)
+
+    start_tz = start_utc.astimezone(ZoneInfo(settings.TIME_ZONE))
+    end_tz = end_dt.astimezone(ZoneInfo(settings.TIME_ZONE))
+
+    task = generate_clip_task.delay(start_tz, end_tz, camera)
     return JsonResponse({"task_id": task.id}, status=202)
 
 

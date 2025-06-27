@@ -19,7 +19,7 @@ r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 logger = logging.getLogger(__name__)
 
 @shared_task(bind=True)
-def generate_clip_task(self, start_ts, end_ts, camera):
+def generate_clip_task(self, start, end, camera):
     """
     Celery task to generate a video clip for one or both cameras over a given time range.
 
@@ -31,8 +31,8 @@ def generate_clip_task(self, start_ts, end_ts, camera):
     - Cleans up intermediate clip files after writing to the zip.
 
     Parameters:
-        start_ts (str): ISO-format string indicating the clip start time.
-        end_ts (str): ISO-format string indicating the clip end time.
+        start (datetime.datetime): ISO-format datetime in the right timezone indicating the clip start time.
+        end (datetime.datetime): ISO-format datetime in the right timezone indicating the clip end time.
         camera (str): One of 'A', 'B', or 'BOTH' to select which camera(s) to include.
 
     Returns:
@@ -42,8 +42,6 @@ def generate_clip_task(self, start_ts, end_ts, camera):
     task_id = self.request.id
 
     # Compute duration and align start time to segment boundary
-    start = datetime.fromisoformat(start_ts)
-    end = datetime.fromisoformat(end_ts)
     duration = (end - start).total_seconds()
     start_offset = f"{start.strftime('00:00:%S')}"
     start = start.replace(second=0, microsecond=0)
