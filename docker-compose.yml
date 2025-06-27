@@ -32,6 +32,7 @@ services:
       context: .
       dockerfile: docker/celery/Dockerfile.celery
     volumes:
+      - ./${DATA_DIR}:/recordings
       - tmp-data:/tmp
     env_file:
       - .env
