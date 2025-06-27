@@ -3,6 +3,9 @@ FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# use local time instead of UTC
+ENV TZ=America/New_York
+
 # Install nginx + RTMP module
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

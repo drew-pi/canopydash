@@ -23,6 +23,9 @@ FROM python:3.13-slim
 
 ARG USER="Eileithyie"
 
+# use local time instead of UTC
+ENV TZ=America/New_York
+
 RUN useradd -m -r ${USER} && \
     mkdir /app && \
     chown -R ${USER} /app
