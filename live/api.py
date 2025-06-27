@@ -1,26 +1,53 @@
-from django.http import HttpResponse, JsonResponse, FileResponse
-from django.conf import settings
+from django.http import HttpResponse, JsonResponse, Http404
 from celery.result import AsyncResult
-import redis
 
 from pathlib import Path
 import logging
 import json
-import os
 
-# from .tasks import generate_clip_task, extract_frame_task
+from .tasks import generate_clip_task
+# extract_frame_task
 
-r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
-
-# logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
+def clip(request):
+    start_ts = request.GET.get("start")
+    end_ts = request.GET.get("end")
+    camera = request.GET.get("camera", "BOTH")
+
+    logger.info(f"Received clip request for camera {camera}: start={start_ts}, end={end_ts}")
+
+    task = generate_clip_task.delay(start_ts, end_ts, camera)
+    return JsonResponse({"task_id": task.id}, status=202)
 
 
-from .tasks import write_message_file
 
-from django.http import JsonResponse, FileResponse, Http404
-from .tasks import write_message_file
+def download_file(request, task_id):
+    result = AsyncResult(task_id)
+
+    if not result.ready():
+        return HttpResponse(status=425)   # 425 Too Early
+
+    file_name = result.result        
+    file_path = Path("/tmp") / file_name  
+
+    if not file_path.is_file():  
+        raise Http404("File not found")
+
+    # 3. Build the X-Accel-Redirect response
+    resp = HttpResponse()
+    resp["Content-Type"] = "application/octet-stream"
+    resp["Content-Disposition"] = f'attachment; filename="{file_name}"'
+    resp["X-Accel-Redirect"] = f"/serving/{file_name}"
+    return resp
+
+
+
+
+
+
+from .tasks import write_message_file, write_message_file
 
 
 def trigger_write(request):

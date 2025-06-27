@@ -6,14 +6,88 @@ import redis
 import numpy as np
 
 from datetime import datetime
+from pathlib import Path
 import logging
 import zipfile
 import json
-import os
 
-from .utils import create_clip, extract_frame
+
+from .utils import create_clip, extract_frame, ws_update
 
 r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+
+logger = logging.getLogger(__name__)
+
+@shared_task(bind=True)
+def generate_clip_task(self, start_ts, end_ts, camera):
+    """
+    Celery task to generate a video clip for one or both cameras over a given time range.
+
+    Steps:
+    - Computes the duration and starting offset based on the timestamps.
+    - Identifies which video segments (raw_clips) are needed from the filesystem.
+    - Uses helper function `create_clip` to concatenate and trim video for camera(s).
+    - Packages the resulting .mp4(s) into a single .zip archive for download.
+    - Cleans up intermediate clip files after writing to the zip.
+
+    Parameters:
+        start_ts (str): ISO-format string indicating the clip start time.
+        end_ts (str): ISO-format string indicating the clip end time.
+        camera (str): One of 'A', 'B', or 'BOTH' to select which camera(s) to include.
+
+    Returns:
+        str: The full path to the resulting ZIP archive containing the clip(s).
+    """
+
+    task_id = self.request.id
+
+    # access global channels layer — enables communication with WebSocket consumers
+    channel_layer = get_channel_layer()
+
+    # Compute duration and align start time to segment boundary
+    start = datetime.fromisoformat(start_ts)
+    end = datetime.fromisoformat(end_ts)
+    duration = (end - start).total_seconds()
+    start_offset = f"{start.strftime('00:00:%S')}"
+    start = start.replace(second=0, microsecond=0)
+
+    logger.debug(f"Start time aligned to boundry is {start}")
+
+    ws_update(task_id, status="Computed aligned start time, duration, and starting offset", progress=5)
+
+    RECORDINGS_PATH = settings.RECORDINGS_PATH
+    SEGMENT_LEN = settings.SEGMENT_LEN
+
+    # Generate list of raw segments spanning the clip duration
+    raw_clips = np.arange(start, end, np.timedelta64(SEGMENT_LEN, "s")).tolist()
+
+    ws_update(task_id, status="Generated list of raw video segments", progress=10)
+
+    base_path = Path("/tmp")
+    timestamp = start.isoformat().replace(":", "-")
+
+    zip_path = base_path / f"clip-AB-{timestamp}.zip"
+    output_A = base_path / f"{timestamp}-cameraA.mp4"
+    output_B = base_path / f"{timestamp}-cameraB.mp4"
+
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        if camera == "A":
+            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
+            zipf.write(output_A, arcname="cameraA.mp4")
+        elif camera == "B":
+            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
+            zipf.write(output_B, arcname="cameraB.mp4")
+        else:
+            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
+            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
+            zipf.write(output_A, arcname="cameraA.mp4")
+            zipf.write(output_B, arcname="cameraB.mp4")
+
+    # Remove temporary files
+    output_A.exists() and output_A.unlink()
+    output_B.exists() and output_B.unlink()
+
+    return zip_path
 
 
 
@@ -73,7 +147,6 @@ def write_message_file(self, message):
     return file_name
 
 
-# logger = logging.getLogger(__name__)
 
 
 # @shared_task(bind=True)

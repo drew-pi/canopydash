@@ -15,10 +15,13 @@ def list_recordings(request):
     return JsonResponse(files, safe=False)
 
 def clip_form(request):
-    return render(request, "clip.html")
+    return render(request, "_clip.html")
 
 def message_page(request):
     return render(request, "message.html")
+
+def load_recording(request):
+    return render(request, "clip.html")
 
 
     

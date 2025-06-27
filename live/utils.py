@@ -1,5 +1,7 @@
 from django.http import HttpResponseBadRequest
 from django.conf import settings
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 import redis
 
 import os
@@ -11,6 +13,27 @@ r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
 logger = logging.getLogger(__name__)
 
+
+
+def ws_update(id, **data):
+    """
+    Sends a websocket update to all listeners in the group "progress_<task_id>".
+    Accepts arbitrary keyword arguments to populate the data payload.
+    Example:
+        ws_update(task_id, status="Started", progress=50)
+    """
+
+    # access global channels layer — enables communication with WebSocket consumers
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        f"progress_{id}",
+        {
+            "type": "update",  # Triggers the `update` method in the consumer
+            "data": data      
+        }
+    )
+        
 
 def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, raw_clips, output_clipped_path):
     """
@@ -36,6 +59,9 @@ def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, ra
     Side Effects:
         Creates temporary intermediate files under /tmp and deletes them after the final clip is saved.
     """
+
+    task_id = task.request.id
+
     # file names
     clip_files_path = f"/tmp/concat_list_{camera}_{start.isoformat().replace(':', '-')}.txt"
     full_clip_path = f"/tmp/full_clip-{camera}-{start.isoformat().replace(':', '-')}.mp4"
@@ -53,7 +79,7 @@ def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, ra
     with open(clip_files_path, "w") as f:
         f.write(valid_clip_files)
 
-    r.set(f"progress:{task.request.id}", json.dumps({"progress": 15, "step": "Starting process of concatenated video clips together"}))
+    ws_update(task_id, status="Starting process of concatenated video clips together", progress=15)
 
     cmd = [
         "ffmpeg",
@@ -67,9 +93,9 @@ def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, ra
 
     subprocess.run(cmd, check=True)
 
-    logger.info(f"Concatenated {len(valid_clip_full_file_names)} existing clips into {full_clip_path}")
+    logger.debug(f"Concatenated {len(valid_clip_full_file_names)} existing clips into {full_clip_path}")
 
-    r.set(f"progress:{task.request.id}", json.dumps({"progress": 50, "step": "Finished concatenating video clips, beginning trimming of full clip"}))
+    ws_update(task_id, status="Finished concatenating video clips, beginning trimming of full clip", progress=50)
 
     cmd = [
         "ffmpeg",
@@ -82,10 +108,9 @@ def create_clip(task, start, start_offset, duration, camera, RECORDINGS_PATH, ra
         output_clipped_path
     ]
 
-    r.set(f"progress:{task.request.id}", json.dumps({"progress": 95, "step": "Finished trimming full clip, cleaning up temporary files and zipping"}))
-
-
     subprocess.run(cmd, check=True)
+
+    ws_update(task_id, status="Finished trimming full clip, cleaning up temporary files and zipping", progress=95)
 
     # remove intermediate steps (if they exist)
     os.path.exists(clip_files_path) and os.remove(clip_files_path)
