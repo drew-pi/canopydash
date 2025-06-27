@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env(
     DEBUG=(bool, False),
     SEGMENT_LEN=(int, 3600),
+    REDIS_PORT=(int, 6379),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env.local'))
 
@@ -36,6 +37,8 @@ RECORDINGS_PATH = env("RECORDINGS_PATH", default="/recordings")
 SEGMENT_LEN = env("SEGMENT_LEN", default=3600)
 FILE_FMT=env("FILE_FMT", default="%Y-%m-%dT%H")
 
+REDIS_PORT=env("REDIS_PORT", default=6379)
+
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', JETSON_IP]
 
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'live',
+    'channels', # used for websockets (python library)
 ]
 
 MIDDLEWARE = [
@@ -196,6 +200,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html#using-celery-with-django
 
 # redis database url
-CELERY_BROKER_URL = f'redis://redis:{os.getenv("REDIS_PORT", "6379")}/0'
+CELERY_BROKER_URL = f'redis://redis:{REDIS_PORT}/0'
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_TIMEZONE = "America/New_York"
+
+
+# https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
+ASGI_APPLICATION = "canopy.asgi.application" 
+
+# https://channels.readthedocs.io/en/stable/topics/channel_layers.html
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("redis", REDIS_PORT)]}, 
+    }
+}

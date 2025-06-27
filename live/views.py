@@ -17,5 +17,8 @@ def list_recordings(request):
 def clip_form(request):
     return render(request, "clip.html")
 
+def message_page(request):
+    return render(request, "message.html")
+
 
     

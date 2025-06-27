@@ -74,7 +74,8 @@ canopydash/
 │   ├── settings.py                 # Project-wide config
 │   ├── urls.py                     # Mounts app routes
 │   ├── celery.py                   # Celery init and config
-│   └── wsgi.py                     # WSGI entrypoint
+│   ├── wsgi.py                     # WSGI entrypoint
+│   └── asgi.py                     # ASGI entry point
 
 ├── live/                           # Handles all camera/video logic
 │   ├── __init__.py
@@ -84,6 +85,8 @@ canopydash/
 │   ├── urls.py                     # Routes for views + API
 │   ├── models.py
 │   ├── utils.py                    # Shared functions: file locators, ffmpeg helpers
+│   ├── consumers.py                # WebSocket event handlers for real-time progress updates
+│   ├── routing.py                  # Routes WebSocket URLs to their corresponding consumers
 │   ├── templates/
 │   │   ├── live.html               # Live stream display
 │   │   └── video_list.html         # Browse/download video segments
@@ -106,3 +109,7 @@ canopydash/
 │           └── js/
 │               └── dashboard.js    # Chart.js, AJAX updates
 ```
+
+## Resources
+
+[Gunicorn vs Uvicorn vs Daphne](https://medium.com/@ezekieloluwadamy/uvicorn-gunicorn-daphne-and-fastapi-a-guide-to-choosing-the-right-stack-76ffaa169791)

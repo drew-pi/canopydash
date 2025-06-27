@@ -1,4 +1,6 @@
 from django.conf import settings
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from celery import shared_task
 import redis
 import numpy as np
@@ -11,6 +13,9 @@ import os
 
 from .utils import create_clip, extract_frame
 
+r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+
+
 
 
 
@@ -19,17 +24,54 @@ from .utils import create_clip, extract_frame
 import time
 
 
-@shared_task
-def write_message_file(message):
-    time.sleep(3)  # Simulate a long-running task
+@shared_task(bind=True)
+def write_message_file(self, message):
+    task_id = self.request.id
 
-    path = f"/tmp/message-{int(time.time())}.txt"
-    with open(path, "w") as f:
+    # access global channels layer — enables communication with WebSocket consumers
+    channel_layer = get_channel_layer()
+
+    for step, msg in enumerate(["Initializing", "Writing", "Finalizing"]):
+        time.sleep(5)
+
+        print(f"{msg}: Using Redis DB", r.connection_pool.connection_kwargs.get("db"))
+
+        # sends progress update message to the WebSocket group with this task ID
+        async_to_sync(channel_layer.group_send)(
+            f"progress_{task_id}",
+            {
+                "type": "update", # calls the 'update' method on all connected consumers
+                "data": {
+                    "status": msg,             
+                    "progress":  int((step + 1) / 3 * 100) - 1      
+                }
+            }
+        )
+
+    file_name = f"{datetime.now().strftime("%Y%m%dT%H%M%S")}-msg.txt"
+    output_file_path = f"/tmp/{file_name}"
+
+    print(f"This is the message: {message}")
+
+    with open(output_file_path, "w") as f:
         f.write(message)
 
-    return path
+    print("Done: Using Redis DB", r.connection_pool.connection_kwargs.get("db"))
 
-# r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+    # sends progress update message to the WebSocket group with this task ID
+    async_to_sync(channel_layer.group_send)(
+        f"progress_{task_id}",
+        {
+            "type": "update", # calls the 'update' method on all connected consumers
+            "data": {
+                "status": "Done",             
+                "progress":  100,
+                "file": file_name  
+            }
+        }
+    )
+    return file_name
+
 
 # logger = logging.getLogger(__name__)
 

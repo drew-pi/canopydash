@@ -1,18 +1,18 @@
-from django.http import JsonResponse, FileResponse
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.conf import settings
 from celery.result import AsyncResult
 import redis
 
+from pathlib import Path
 import logging
 import json
 import os
 
 # from .tasks import generate_clip_task, extract_frame_task
 
-# r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
+r = redis.Redis.from_url(settings.CELERY_BROKER_URL)
 
-logger = logging.getLogger(__name__)
-
+# logger = logging.getLogger(__name__)
 
 
 
@@ -28,15 +28,47 @@ def trigger_write(request):
     task = write_message_file.delay(message)
     return JsonResponse({"task_id": task.id})
 
+def task_progress(request, task_id):
+    
+    print("Task progress: Using Redis DB", r.connection_pool.connection_kwargs.get("db"))
 
-def get_result_file(request, task_id):
+    data = r.get(f"progress:{task_id}")
+    if data:
+        return JsonResponse(json.loads(data))
+    return JsonResponse({"status": "waiting", "progress": 0})
+
+
+def get_result_message(request, task_id):
     result = AsyncResult(task_id)
+
+    print("get_result_message: Using Redis DB", r.connection_pool.connection_kwargs.get("db"))
+
+    print("this is the result", result)
     if result.ready():
-        path = result.result
-        if os.path.exists(path):
-            return FileResponse(open(path, 'rb'), as_attachment=True)
-        raise Http404("File not found")
+        return JsonResponse({"status": "done", "message": result.result})
     return JsonResponse({"status": "pending"})
+
+
+def download_result(request, task_id):
+    result = AsyncResult(task_id)
+
+    if not result.ready():
+        return HttpResponse(status=425)   # 425 Too Early
+
+    file_name = result.result        
+    file_path = Path("/tmp") / file_name  
+
+    if not file_path.is_file():  
+        raise Http404("File not found")
+
+    # 3. Build the X-Accel-Redirect response
+    resp = HttpResponse()
+    resp["Content-Type"] = "application/octet-stream"
+    resp["Content-Disposition"] = f'attachment; filename="{file_name}"'
+    resp["X-Accel-Redirect"] = f"/serving/{file_name}"
+    return resp
+
+
 
 # def clip(request):
 #     start_ts = request.GET.get("start")
