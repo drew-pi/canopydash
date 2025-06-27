@@ -41,9 +41,6 @@ def generate_clip_task(self, start_ts, end_ts, camera):
 
     task_id = self.request.id
 
-    # access global channels layer — enables communication with WebSocket consumers
-    channel_layer = get_channel_layer()
-
     # Compute duration and align start time to segment boundary
     start = datetime.fromisoformat(start_ts)
     end = datetime.fromisoformat(end_ts)
@@ -72,14 +69,14 @@ def generate_clip_task(self, start_ts, end_ts, camera):
 
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         if camera == "A":
-            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
+            create_clip(self, start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
             zipf.write(output_A, arcname="cameraA.mp4")
         elif camera == "B":
-            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
+            create_clip(self, start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
             zipf.write(output_B, arcname="cameraB.mp4")
         else:
-            create_clip(start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
-            create_clip(start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
+            create_clip(self, start, start_offset, duration, "A", RECORDINGS_PATH, raw_clips, output_A)
+            create_clip(self, start, start_offset, duration, "B", RECORDINGS_PATH, raw_clips, output_B)
             zipf.write(output_A, arcname="cameraA.mp4")
             zipf.write(output_B, arcname="cameraB.mp4")
 
