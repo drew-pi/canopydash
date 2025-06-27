@@ -27,6 +27,9 @@ def clip(request):
     start_tz = start_utc.astimezone(ZoneInfo(settings.TIME_ZONE))
     end_tz = end_dt.astimezone(ZoneInfo(settings.TIME_ZONE))
 
+    logger.info(f"Convering to proper timezone where start={start_tz}, end={end_tz}")
+
+
     task = generate_clip_task.delay(start_tz, end_tz, camera)
     return JsonResponse({"task_id": task.id}, status=202)
 
