@@ -57,6 +57,7 @@ def generate_clip_task(self, start_ts, end_ts, camera):
 
     # Generate list of raw segments spanning the clip duration
     raw_clips = np.arange(start, end, np.timedelta64(SEGMENT_LEN, "s")).tolist()
+    logger.debug(f"These are the raw clips {raw_clips}")
 
     ws_update(task_id, status="Generated list of raw video segments", progress=10)
 
