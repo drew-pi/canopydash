@@ -4,7 +4,8 @@
   </head>
   <body>
     <h1>Download a Video Clip</h1>
-    <form id="clip-form">
+
+    <div>
       <label>
         Choose which camera:
         <select name="camera">
@@ -13,6 +14,21 @@
           <option value="BOTH" selected>Both</option>
         </select>
       </label>
+
+      <label>
+        Start Time (ISO):
+        <input type="datetime-local" name="start" step="1" />
+      </label>
+
+      <label>
+        End Time (ISO):
+        <input type="datetime-local" name="end" step="1" />
+      </label>
+
+      <button type="submit" onclick="submitMessage()">Download Clip</button>
+    </div>
+
+    <!-- <form id="clip-form">
       <br />
       <label>
         Start Time (ISO):
@@ -25,13 +41,73 @@
       </label>
       <br />
       <button type="submit" onclick="submitMessage()">Download Clip</button>
-    </form>
+    </form> -->
 
     <p id="status">Waiting ...</p>
 
     <progress id="progress" max="100" value="0"></progress>
 
     <script>
+      async function submitMessage() {
+        const camera = document.getElementById("camera").value;
+        const startRaw = document.getElementById("start").value;
+        const endRaw = document.getElementById("end").value;
+
+        console.log("Starting the task");
+        console.log(`Running on ${window.location.host}`);
+
+        // Disable UI while running
+        const btn = document.getElementById("submit-btn");
+        btn.disabled = true;
+
+        try {
+          const res = await fetch(
+            `/live/api/clip/?camera=${camera}&start=${start}&end=${end}`
+          );
+          const { task_id } = await res.json();
+
+          const ws = new WebSocket(
+            `ws://${location.host}/ws/progress/${task_id}/`
+          );
+
+          // Handle incoming progress updates
+          ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            console.log("Received update:", data);
+
+            document.getElementById("status").innerText = data.status;
+            document.getElementById("progress").value = data.progress;
+
+            if (data.status === "Done" && data.progress === 100) {
+              ws.close();
+              // Trigger download
+              window.location = `/live/api/download/${task_id}/`;
+            }
+          };
+
+          // Optional: handle unexpected closure
+          ws.onclose = () => {
+            console.log("WebSocket closed");
+
+            // clean up the progress bar
+            document.getElementById("progress").value = 0;
+            document.getElementById("status").innerText = "Task complete";
+
+            btn.disabled = false;
+          };
+
+          ws.onerror = (err) => {
+            console.error("WebSocket error:", err);
+            btn.disabled = false;
+          };
+        } catch (err) {
+          console.error("Error submitting message:", err);
+          btn.disabled = false;
+        }
+      }
+    </script>
+
+    <!-- <script>
       document
         .getElementById("clip-form")
         .addEventListener("submit", async function (e) {
@@ -83,7 +159,7 @@
             console.error("Error during fetch or WebSocket:", err);
             btn.disabled = false;
           }
-        });
+        }); -->
     </script>
   </body>
 </html>
