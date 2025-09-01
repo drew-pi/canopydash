@@ -26,9 +26,9 @@ ARG USER="Eileithyie"
 # use local time instead of UTC
 ENV TZ=America/New_York
 
-RUN useradd -m -r ${USER} && \
-    mkdir /app && \
-    chown -R ${USER} /app
+RUN useradd -m -r ${USER} \
+    && mkdir -p /app/staticfiles /app \
+    && chown -R ${USER}:${USER} /app
 
 # Copy the Python dependencies from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
