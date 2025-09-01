@@ -64,8 +64,8 @@ COPY . /app
 RUN chown -R root:root /app && chmod -R 755 /app
 
 # Supervisor configs
-COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
-COPY docker/supervisor/conf.d/ /etc/supervisor/conf.d/
+COPY docker/canopy-worker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/canopy-worker/supervisor/conf.d/ /etc/supervisor/conf.d/
 
 # FFmpeg helper script(s)
 RUN mkdir -p /app/bin
