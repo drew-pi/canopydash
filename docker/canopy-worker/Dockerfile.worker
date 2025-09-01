@@ -1,0 +1,84 @@
+# https://github.com/betterstack-community/docker-django-demo/blob/main/Dockerfile
+
+# Stage 1: Base build stage
+FROM python:3.13-slim AS builder
+
+# Create the app directory
+RUN mkdir /app
+
+# Set the working directory
+WORKDIR /app
+
+# Set environment variables to optimize Python
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+
+# Install dependencies first for caching benefit
+RUN pip install --upgrade pip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Stage 2: Production stage
+FROM python:3.13-slim
+
+# Install ffmpeg, supervisor, v4l-utils and tzdata (for consistent timestamps), ca-certificates for TCP connections 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg supervisor v4l-utils tzdata ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Timezone
+ENV TZ=America/New_York
+
+# Non-root app users (celery worker is special so that it can start/stop supervisord processes)
+ARG CELERY_USER=celery
+ARG FFMPEG_USER=ffmpeg
+
+# Create service users, a group that can control Supervisor, and video group
+RUN useradd -m -r ${CELERY_USER} \
+    && useradd -m -r ${FFMPEG_USER} \
+    && groupadd -r supervisorctl \
+    && usermod -a -G supervisorctl ${CELERY_USER} \
+    && usermod -a -G video ${FFMPEG_USER} 
+
+# Keep code read-only (root-owned) so any service user can read it
+RUN mkdir -p /app /var/log/supervisor /run/supervisord \
+    /var/log/celery /var/log/ffmpeg /var/lib/celery
+
+# Celery gets its own writable areas
+RUN chown -R ${CELERY_USER}:${CELERY_USER} /var/log/celery /var/lib/celery
+
+# FFmpeg gets its own writable area
+RUN chown -R ${FFMPEG_USER}:${FFMPEG_USER} /var/log/ffmpeg
+
+# Code stays root-owned; world-readable
+RUN chown -R root:root /app && chmod -R 755 /app
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the Python dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Copy application code
+COPY . /app
+RUN chown -R root:root /app && chmod -R 755 /app
+
+# Supervisor configs
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisor/conf.d/ /etc/supervisor/conf.d/
+
+# FFmpeg helper script(s)
+RUN mkdir -p /app/bin
+COPY docker/canopy-worker/scripts/live.sh /app/bin/live.sh
+COPY docker/canopy-worker/scripts/record.sh /app/bin/record.sh
+
+RUN chmod 755 /app/bin/live.sh /app/bin/record.sh \
+    && chown root:root /app/bin/live.sh /app/bin/record.sh
+
+
+# Environment for Python
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Entrypoint: keep supervisor in foreground for Docker
+CMD ["supervisord","-n","-c","/etc/supervisor/supervisord.conf"]

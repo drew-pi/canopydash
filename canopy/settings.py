@@ -203,7 +203,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # redis database url
 CELERY_BROKER_URL = f'redis://redis:{REDIS_PORT}/0'
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_TIMEZONE = "America/New_York"
+CELERY_TIMEZONE = TIME_ZONE
 
 
 # https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/

@@ -14,13 +14,14 @@ services:
       - "127.0.0.1:8000:8000" # can only access on port 8000 in development
     depends_on:
       - redis
-  ffmpeg:
+  canopy-worker:
     build:
       context: .
-      dockerfile: docker/ffmpeg/Dockerfile.ffmpeg
+      dockerfile: docker/canopy-worker/Dockerfile.worker
     volumes:
       - ./${DATA_DIR}:/recordings
-      - ./${LOG_DIR}:/logs
+      - ./${LOG_DIR}:/var/log/ffmpeg
+      - tmp-data:/tmp
     env_file:
       - .env
     devices:
@@ -28,16 +29,6 @@ services:
       - "/dev/video1:/dev/video1"
     depends_on:
       - nginx
-  celery:
-    build:
-      context: .
-      dockerfile: docker/celery/Dockerfile.celery
-    volumes:
-      - ./${DATA_DIR}:/recordings
-      - tmp-data:/tmp
-    env_file:
-      - .env
-    depends_on:
       - redis
   nginx:
     build:
