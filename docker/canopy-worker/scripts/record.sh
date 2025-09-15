@@ -23,16 +23,16 @@ fi
 
 : "${JETSON_IP:?set JETSON_IP (e.g. 10.0.0.50)}"
 : "${SEGMENT_LEN:?set SEGMENT_LEN seconds (e.g. 300)}"
-: "${RECORDINGS_DIR:?set RECORDINGS_DIR (e.g. /recordings)}"
+: "${RECORDINGS_PATH:?set RECORDINGS_PATH (e.g. /recordings)}"
 : "${FILE_FMT:?set FILE_FMT (e.g. %Y-%m-%d_%H-%M-%S)}"
 
 echo "[INFO] Recording camera $CAMERA_ID stream"
 echo "[INFO] Using segment length=$SEGMENT_LEN"
 echo "[INFO] Using jetson ip=$JETSON_IP"
-echo "[INFO] Using data directory=$RECORDINGS_DIR"
+echo "[INFO] Using data directory=$RECORDINGS_PATH"
 echo "[INFO] Using file format=$FILE_FMT-$CAMERA_ID.mp4"
 
-SAVE_DIR=$RECORDINGS_DIR
+SAVE_DIR=$RECORDINGS_PATH
 # making sure that the directory exists
 mkdir -p $SAVE_DIR
 
