@@ -4,8 +4,9 @@
 # bash scripts/record.sh [A|B]
 ## 
 
-set -euo pipefail
-trap 'echo "[ERROR] Command failed at line $LINENO: $BASH_COMMAND" >&2' ERR
+set -Eeuo pipefail
+
+trap 'echo "[ERROR] line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # check to see if only one argument passed in
 if [[ $# -ne 1 ]]; then
@@ -20,6 +21,11 @@ else
     exit 1
 fi
 
+: "${JETSON_IP:?set JETSON_IP (e.g. 10.0.0.50)}"
+: "${SEGMENT_LEN:?set SEGMENT_LEN seconds (e.g. 300)}"
+: "${RECORDINGS_DIR:?set RECORDINGS_DIR (e.g. /recordings)}"
+: "${FILE_FMT:?set FILE_FMT (e.g. %Y-%m-%d_%H-%M-%S)}"
+
 echo "[INFO] Recording camera $CAMERA_ID stream"
 echo "[INFO] Using segment length=$SEGMENT_LEN"
 echo "[INFO] Using jetson ip=$JETSON_IP"
@@ -32,10 +38,9 @@ mkdir -p $SAVE_DIR
 
 echo "[INFO] Saving files to $SAVE_DIR"
 
-while true; do
-    echo -e "\n[INFO] Starting aligned recording at $(date +%T.%3N)\n"
+echo -e "\n[INFO] Starting aligned recording at $(date +%T.%3N)\n"
 
-    if ! ffmpeg \
+ffmpeg \
         -rw_timeout 15000000 \
         -f flv \
         -i "rtmp://$JETSON_IP/live/stream${CAMERA_ID}" \
@@ -47,9 +52,4 @@ while true; do
         -reset_timestamps 1 \
         -movflags +faststart \
         -loglevel warning \
-        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"; then
-
-        echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date). Retrying...\n"
-        sleep 1
-    fi
-done
+        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"
