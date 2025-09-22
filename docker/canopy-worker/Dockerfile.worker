@@ -52,13 +52,14 @@ RUN mkdir -p /app \
 # Copy Python packages from builder stage
 COPY --from=builder /root/.local /root/.local
 
-# Copy only necessary application files (exclude dev files, tests, etc.)
-COPY --chown=root:root src/ /app/src/
-COPY --chown=root:root manage.py /app/
+# copy over config files
 COPY --chown=root:root docker/canopy-worker/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 COPY --chown=root:root docker/canopy-worker/supervisord/conf.d/ /etc/supervisor/conf.d/
-COPY --chown=root:root --chmod=755 docker/canopy-worker/scripts/live.sh /app/bin/
-COPY --chown=root:root --chmod=755 docker/canopy-worker/scripts/record.sh /app/bin/
+
+# Copy scripts and set permissions
+COPY --chown=root:root docker/canopy-worker/scripts/live.sh /app/bin/
+COPY --chown=root:root docker/canopy-worker/scripts/record.sh /app/bin/
+RUN chmod 755 /app/bin/live.sh /app/bin/record.sh
 
 # Set working directory
 WORKDIR /app
