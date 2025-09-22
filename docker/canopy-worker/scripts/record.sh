@@ -35,6 +35,8 @@ mkdir -p $SAVE_DIR
 
 echo "[INFO] Saving files to $SAVE_DIR"
 
+sleep "$(awk "BEGIN {print 1 - ($(date +%s.%N) % 1)}")"
+
 echo -e "\n[INFO] Starting aligned recording at $(date +%T.%3N)\n"
 
 ffmpeg \
