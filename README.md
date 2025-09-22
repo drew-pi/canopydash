@@ -14,6 +14,31 @@ To stop the django project use
 sudo docker-compose down --remove-orphans --volumes
 ```
 
+## Using supervisord
+
+To show all of the processes currently being managed by supervisor (more precisely all of the programs defined in the .conf files)
+
+```
+supervisorctl status
+```
+
+To start, stop and restart these programs use the following commands
+
+```
+supervisorctl stop <program_name>
+supervisorctl start <program_name>
+supervisorctl restart <program_name>
+
+# restarts all the files
+supervisorctl restart all
+```
+
+To show a live tail of the logs from a given program use
+
+```
+supervisorctl tail -f <program_name>
+```
+
 ## Running the django project locally
 
 Use the following command to run the project locally

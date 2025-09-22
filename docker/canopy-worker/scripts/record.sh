@@ -33,23 +33,39 @@ echo "[INFO] Using data directory=$RECORDINGS_PATH"
 echo "[INFO] Using file format=$FILE_FMT-$CAMERA_ID.mp4"
 
 SAVE_DIR=$RECORDINGS_PATH
+
 # making sure that the directory exists
 mkdir -p $SAVE_DIR
 
 echo "[INFO] Saving files to $SAVE_DIR"
 
-echo -e "\n[INFO] Starting aligned recording at $(date +%T.%3N)\n"
+for i in {1..10}; do
+  # synchronize to next second
+  sleep "$(awk "BEGIN {print 1 - ($(date +%s.%N) % 1)}")"
 
-ffmpeg \
-        -rw_timeout 15000000 \
-        -f flv \
-        -i "rtmp://$JETSON_IP/live/stream${CAMERA_ID}" \
-        -c copy \
-        -f segment \
-        -segment_time "$SEGMENT_LEN" \
-        -segment_atclocktime 1 \
-        -strftime 1 \
-        -reset_timestamps 1 \
-        -movflags +faststart \
-        -loglevel warning \
-        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"
+  echo -e "\n[INFO] Attempt $i/10 — starting aligned recording at $(date +%T.%3N)\n"
+
+  if ffmpeg \
+      -rw_timeout 15000000 \
+      -f flv \
+      -i "rtmp://$JETSON_IP/live/stream${CAMERA_ID}" \
+      -c copy \
+      -f segment \
+      -segment_time "$SEGMENT_LEN" \
+      -segment_atclocktime 1 \
+      -strftime 1 \
+      -reset_timestamps 1 \
+      -movflags +faststart \
+      -loglevel info \
+      "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"; then
+    echo "[INFO] FFmpeg exited cleanly on attempt $i"
+    exit 0
+  else
+    echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date). Retrying...\n"
+    sleep 1
+  fi
+done
+
+echo "[ERROR] FFmpeg failed after 10 attempts. Giving up."
+exit 1
+
