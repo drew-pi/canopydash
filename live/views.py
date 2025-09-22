@@ -7,7 +7,7 @@ import os
 def index(request):
     return render(request, "viewer.html", {
         "ip": settings.JETSON_IP,
-        "cameras": ["A", "B"],
+        "cameras": ["0", "1"],
     })
 
 def list_recordings(request):

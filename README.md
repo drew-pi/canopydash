@@ -5,7 +5,7 @@
 To spin the project up use (can also add the `-d` flag to detach it from current terminal)
 
 ```
-sudo docker-compose up
+sudo docker-compose up --build
 ```
 
 To stop the django project use
