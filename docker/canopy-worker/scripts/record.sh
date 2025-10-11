@@ -39,6 +39,7 @@ sleep "$(awk "BEGIN {print 1 - ($(date +%s.%N) % 1)}")"
 
 echo -e "\n[INFO] Starting aligned recording at $(date +%T.%3N)\n"
 
+
 ffmpeg \
       -rw_timeout 15000000 \
       -f flv \
@@ -53,4 +54,30 @@ ffmpeg \
       -loglevel info \
       "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"
 
-echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying...\n
+echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying...\n"
+
+
+MAX_RETRIES=5
+
+for attempt in $(seq 1 $MAX_RETRIES); do
+    sleep "$(awk "BEGIN {print 0.99 - ($(date +%s.%N) % 1)}")"
+
+    echo "[INFO] Attempt $attempt of $MAX_RETRIES at $(date +%T.%3N)"
+
+    ffmpeg \
+        -rw_timeout 15000000 \
+        -f flv \
+        -i "rtmp://$JETSON_IP/live/stream${CAMERA_ID}" \
+        -c copy \
+        -f segment \
+        -segment_time "$SEGMENT_LEN" \
+        -segment_atclocktime 1 \
+        -strftime 1 \
+        -reset_timestamps 1 \
+        -movflags +faststart \
+        -loglevel info \
+        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4" && break
+
+    echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying ($attempt/$MAX_RETRIES)...\n"
+
+done
