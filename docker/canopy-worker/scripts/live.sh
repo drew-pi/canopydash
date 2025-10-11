@@ -34,7 +34,9 @@ ffmpeg -re -f v4l2 -fflags +discardcorrupt \
        text='%{localtime}':x=10:y=10:fontsize=32:fontcolor=white:box=1:boxcolor=black@0.5" \
     -c:v libx264 -preset medium -crf 25 -tune zerolatency \
     -g 1 -keyint_min 1 -sc_threshold 0 \
-    -force_key_frames "expr:gte(t,n_forced*${SEGMENT_LEN})" \
+    -force_key_frames "expr:gte(t,n_forced*5)" \
     -movflags +faststart -an \
     -loglevel warning \
     -f flv "rtmp://$JETSON_IP/live/stream${CAMERA_ID}"
+
+    # -force_key_frames "expr:gte(t,n_forced*${SEGMENT_LEN})" \

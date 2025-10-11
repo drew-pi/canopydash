@@ -4,13 +4,13 @@
 
 To spin the project up use (can also add the `-d` flag to detach it from current terminal)
 
-```
+```bash
 sudo docker-compose up --build
 ```
 
 To stop the django project use
 
-```
+```bash
 sudo docker-compose down --remove-orphans --volumes
 ```
 
@@ -18,13 +18,13 @@ sudo docker-compose down --remove-orphans --volumes
 
 To show all of the processes currently being managed by supervisor (more precisely all of the programs defined in the .conf files)
 
-```
+```bash
 supervisorctl status
 ```
 
 To start, stop and restart these programs use the following commands
 
-```
+```bash
 supervisorctl stop <program_name>
 supervisorctl start <program_name>
 supervisorctl restart <program_name>
@@ -35,7 +35,7 @@ supervisorctl restart all
 
 To show a live tail of the logs from a given program use
 
-```
+```bash
 supervisorctl tail -f <program_name>
 ```
 
@@ -43,7 +43,7 @@ supervisorctl tail -f <program_name>
 
 Use the following command to run the project locally
 
-```
+```bash
 python manage.py runserver
 ```
 
@@ -51,25 +51,25 @@ python manage.py runserver
 
 Create the virtual environment in that directory (make sure it is called venv otherwise it will be tracked by github)
 
-```
+```bash
 python3 -m venv venv
 ```
 
 Activate the virtual environment
 
-```
+```bash
 source venv/bin/activate
 ```
 
 Install the necessary dependencies
 
-```
+```bash
 pip install -r requirements.txt
 ```
 
 To deactivate the virtual environment use
 
-```
+```bash
 deactivate
 ```
 

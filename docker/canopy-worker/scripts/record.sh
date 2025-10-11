@@ -54,4 +54,3 @@ ffmpeg \
       "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"
 
 echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying...\n
-
