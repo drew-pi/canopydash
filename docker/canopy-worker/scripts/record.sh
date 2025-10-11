@@ -76,9 +76,12 @@ for attempt in $(seq 1 $MAX_RETRIES); do
         -reset_timestamps 1 \
         -movflags +faststart \
         -loglevel info \
-        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4" && break
+        "$SAVE_DIR/$FILE_FMT-$CAMERA_ID.mp4"
+    then
+        echo "[INFO] Stream ended normally at $(date +%T.%3N)"
+        exit 0
+    else
+        echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying ($attempt/$MAX_RETRIES)...\n"
     fi
-
-    echo -e "\n[WARN] FFmpeg exited unexpectedly at $(date +%T.%3N). Retrying ($attempt/$MAX_RETRIES)...\n"
 
 done
